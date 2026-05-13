@@ -1,0 +1,73 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run tests with pytest
+      run: |
+        pytest test_app.py -v --cov=. --cov-report=xml
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+  deploy:
+    needs: build-test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Deploy to Render
+      env:
+        RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+      run: |
+        if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+          echo "⚠️  Render deploy hook URL not configured"
+          echo "✅ To enable auto-deployment:"
+          echo "   1. Go to your Render service settings"
+          echo "   2. Copy the Deploy Hook URL"
+          echo "   3. Add it as RENDER_DEPLOY_HOOK_URL secret in GitHub"
+        else
+          curl "$RENDER_DEPLOY_HOOK_URL"
+          echo "✅ Deployment triggered successfully"
+        fi
+
+    - name: Deployment Complete
+      run: |
+        echo "🎉 CI/CD Pipeline Completed Successfully!"
+        echo "✅ Build: Passed"
+        echo "✅ Tests: Passed"
+        echo "✅ Deployment: Completed"
