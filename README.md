@@ -26,8 +26,7 @@ This project implements a production-ready CI/CD pipeline demonstrating end-to-e
 | Test Success Rate | 100% |
 | Code Coverage | All endpoints |
 | CI/CD Stages | 3 (Build, Test, Deploy) |
-| Documentation Lines | 1,500+ |
-| Files Created | 15+ |
+| Files Created | 10+ |
 
 ---
 
